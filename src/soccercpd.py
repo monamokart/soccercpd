@@ -49,7 +49,8 @@ class SoccerCPD:
         self.role_periods = pd.DataFrame(columns=HEADER_ROLE_PERIODS)
         self.role_records = None
 
-        self.target_dir = f'{DIR_DATA}/{formcpd_type}_{rolecpd_type}' if apply_cpd else f'{DIR_DATA}/noncpd'
+        self.target_dir = f'{DIR_DATA}/{formcpd_type}' if apply_cpd else f'{DIR_DATA}/noncpd'
+        self.target_subdir = f'{DIR_DATA}/{formcpd_type}/{rolecpd_type}' if apply_cpd else f'{DIR_DATA}/noncpd'
 
     # Apply Delaunay triangulation to the given player coordinates to obtain the role-adjacency matrix
     @staticmethod
@@ -592,10 +593,12 @@ class SoccerCPD:
         plt.xlabel('session-time')
         plt.ylabel('player')
 
-        report_dir = f'{self.target_dir}/report'
+        report_dir = f'{self.target_subdir}/report'
         report_path = f'{report_dir}/{self.match.record[LABEL_ACTIVITY_ID]}.png'
         if not os.path.exists(f'{self.target_dir}'):
             os.mkdir(f'{self.target_dir}')
+        if not os.path.exists(f'{self.target_subdir}'):
+            os.mkdir(f'{self.target_subdir}')
         if not os.path.exists(report_dir):
             os.mkdir(report_dir)
 
@@ -606,6 +609,8 @@ class SoccerCPD:
     def save_stats(self, fgp=True, form=True, role=True):
         if not os.path.exists(f'{self.target_dir}'):
             os.mkdir(f'{self.target_dir}')
+        if not os.path.exists(f'{self.target_subdir}'):
+            os.mkdir(f'{self.target_subdir}')
 
         # Save fgp_df
         if fgp:
@@ -627,7 +632,7 @@ class SoccerCPD:
 
         # save role_records
         if role:
-            role_dir = f'{self.target_dir}/role'
+            role_dir = f'{self.target_subdir}/role'
             if not os.path.exists(role_dir):
                 os.mkdir(role_dir)
             role_path = f'{role_dir}/{self.activity_id}.csv'
