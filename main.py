@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 from tqdm import tqdm
 from joblib import Parallel, delayed
+import argparse
 
 # Uncomment this code if it raises an error
 # os.environ['R_HOME'] = "/usr/lib/R"  # or whereever your R is installed"
@@ -29,7 +30,7 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
 
 
-def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type):
+def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, save):
     tic = datetime.now()
     activity_id = activity_records.at[i, LABEL_ACTIVITY_ID]
     date = activity_records.at[i, LABEL_DATE]
@@ -52,7 +53,7 @@ def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type):
         match.rotate_pitch()
 
         # Apply SoccerCPD on the preprocessed match data
-        cpd = SoccerCPD(match, apply_cpd=apply_cpd, formcpd_type=formcpd_type)
+        cpd = SoccerCPD(match, apply_cpd=apply_cpd, formcpd_type=formcpd_type, save=save)
         cpd.run()
         if not cpd.fgp_df.empty:
             cpd.visualize()
@@ -70,15 +71,20 @@ def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type):
         return i, 0
 
 
-def analyze_activity(i, outliers, apply_cpd=True, formcpd_type='gseg_avg', verbose=True):
+def analyze_activity(i, outliers, apply_cpd=True, formcpd_type='gseg_avg', verbose=True, save=False):
     if verbose:
-        return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type)
+        return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, save)
     else:
         with HiddenPrints():
-            return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type)
+            return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, save)
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--formcpd_type')
+    parser.add_argument('--saveinput')
+    parser.add_argument('--verbose', default=True)
+    args = parser.parse_args()
 
     # Install and import the R package 'gSeg' to be used in SoccerCPD
     utils = rpackages.importr('utils')
@@ -110,7 +116,7 @@ if __name__ == '__main__':
 
     # Perform SoccerCPD per match using for loop
     for i in activity_records.index:
-        analyze_activity(i, outliers, apply_cpd=False, formcpd_type='gseg_union', verbose=True)
+        analyze_activity(i, outliers, apply_cpd=True, formcpd_type=args.formcpd_type, verbose=args.verbose, save=args.saveinput) 
 
         # Set 'stats_saved' value for the match to 1 to avoid redundant executions
         rm.activity_records.at[i, LABEL_STATS_SAVED] = 1

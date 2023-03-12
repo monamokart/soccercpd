@@ -25,11 +25,12 @@ pd.set_option('display.max_columns', 20)
 class SoccerCPD:
     def __init__(
         self, match, apply_cpd=True, formcpd_type='gseg_avg', rolecpd_type='gseg_avg',
-        max_sr=MAX_SWITCH_RATE, max_pval=MAX_PVAL, min_pdur=MIN_PERIOD_DUR, min_fdist=MIN_FORM_DIST
-    ):
+        max_sr=MAX_SWITCH_RATE, max_pval=MAX_PVAL, min_pdur=MIN_PERIOD_DUR, min_fdist=MIN_FORM_DIST,
+        save=False):
         self.apply_cpd = apply_cpd
         self.formcpd_type = formcpd_type
         self.rolecpd_type = rolecpd_type
+        self.save = save
         # Available FormCPD types: 'gseg_avg', 'gseg_union', 'kernel_linear', 'kernel_rbf', 'kernel_cosine', 'rank'
         # Available RoleCPD types: 'gseg_avg', 'gseg_union'
 
@@ -48,7 +49,7 @@ class SoccerCPD:
         self.role_periods = pd.DataFrame(columns=HEADER_ROLE_PERIODS)
         self.role_records = None
 
-        self.target_dir = f'{DIR_DATA}/{formcpd_type}' if apply_cpd else f'{DIR_DATA}/noncpd'
+        self.target_dir = f'{DIR_DATA}/{formcpd_type}_{rolecpd_type}' if apply_cpd else f'{DIR_DATA}/noncpd'
 
     # Apply Delaunay triangulation to the given player coordinates to obtain the role-adjacency matrix
     @staticmethod
@@ -335,6 +336,12 @@ class SoccerCPD:
                 sub_dts = pd.to_datetime(
                     player_periods.loc[player_periods[LABEL_TYPE].isin(['SUB', 'RED']), LABEL_START_DT].values
                 )
+                if self.save:
+                    if not os.path.exists(f"{DIR_DATA}/MVA"):
+                        os.mkdir(f"{DIR_DATA}/MVA")
+                    edge_mats.to_csv(f"{DIR_DATA}/MVA/seq_form.csv") 
+                    np.save(f"{DIR_DATA}/MVA/sub_dts_form.npy", sub_dts.values) 
+
                 form_chg_dts = self.detect_change_times(edge_mats, sub_dts, mode='form')
 
                 print("Detected formation change-points (rounded off to the nearest 10 second mark):")
@@ -359,10 +366,13 @@ class SoccerCPD:
             perms = perms.apply(SoccerCPD.complete_perm, axis=1, args=(role_set,)).astype(int)
             perms_str = perms.apply(lambda perm: np.array2string(perm.values), axis=1)
             perm_list.append(perms_str.rename(LABEL_PERM).to_frame())
+
+            if self.save:
+                perms.to_csv(f"{DIR_DATA}/MVA/seq_role.csv")
             
             for form_chg_idx in range(1, len(form_chg_dts)):
-                # form_period = len(self.form_periods) + 1
-                form_period = session
+                form_period = len(self.form_periods) + 1
+                # form_period = session
 
                 form_start_dt = form_chg_dts[form_chg_idx - 1]
                 form_end_dt = form_chg_dts[form_chg_idx]
@@ -389,6 +399,9 @@ class SoccerCPD:
                     print(f"\nRoleCPD for the formation period {form_period}:")
                     input_perms = perms[form_start_dt:form_end_dt]
                     input_sub_dts = np.array([dt for dt in sub_dts if (dt >= form_start_dt) and (dt < form_end_dt)])
+                    if self.save:
+                        input_perms.to_csv(f"{DIR_DATA}/MVA/seq_role_{form_chg_idx}.csv")
+                        np.save( f"{DIR_DATA}/MVA/sub_dts_role_{form_chg_idx}.npy", input_sub_dts)
                     role_chg_dts = self.detect_change_times(input_perms, input_sub_dts, mode='role')
 
                     print("Detected role change-points (rounded off to the nearset 10 second mark):")
