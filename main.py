@@ -82,8 +82,8 @@ def analyze_activity(i, outliers, apply_cpd=True, formcpd_type='gseg_avg', verbo
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--formcpd_type')
-    parser.add_argument('--saveinput')
-    parser.add_argument('--verbose', default=True)
+    parser.add_argument('--saveinput', default=False, action="store_true")
+    parser.add_argument('--noverbose', default=False, action="store_true")
     args = parser.parse_args()
 
     # Install and import the R package 'gSeg' to be used in SoccerCPD
@@ -103,6 +103,7 @@ if __name__ == '__main__':
     print(activity_records)
 
     outliers = pd.read_csv('data/outliers.csv', header=0) if os.path.exists('data/outliers.csv') else None
+    verbose = not args.noverbose
 
     # Perform SoccerCPD per match using parallel processing
     # results = Parallel(n_jobs=50)(
@@ -116,7 +117,7 @@ if __name__ == '__main__':
 
     # Perform SoccerCPD per match using for loop
     for i in activity_records.index:
-        analyze_activity(i, outliers, apply_cpd=True, formcpd_type=args.formcpd_type, verbose=args.verbose, save=args.saveinput) 
+        analyze_activity(i, outliers, apply_cpd=True, formcpd_type=args.formcpd_type, verbose=verbose, save=args.saveinput) 
 
         # Set 'stats_saved' value for the match to 1 to avoid redundant executions
         rm.activity_records.at[i, LABEL_STATS_SAVED] = 1
