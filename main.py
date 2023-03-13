@@ -30,7 +30,7 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
 
 
-def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, save):
+def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, rolecpd_type, save):
     tic = datetime.now()
     activity_id = activity_records.at[i, LABEL_ACTIVITY_ID]
     date = activity_records.at[i, LABEL_DATE]
@@ -53,7 +53,7 @@ def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, save):
         match.rotate_pitch()
 
         # Apply SoccerCPD on the preprocessed match data
-        cpd = SoccerCPD(match, apply_cpd=apply_cpd, formcpd_type=formcpd_type, save=save)
+        cpd = SoccerCPD(match, apply_cpd=apply_cpd, formcpd_type=formcpd_type, rolecpd_type=rolecpd_type, save=save)
         cpd.run()
         if not cpd.fgp_df.empty:
             cpd.visualize()
@@ -71,17 +71,18 @@ def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, save):
         return i, 0
 
 
-def analyze_activity(i, outliers, apply_cpd=True, formcpd_type='gseg_avg', verbose=True, save=False):
+def analyze_activity(i, outliers, apply_cpd=True, formcpd_type='gseg_avg', rolecpd_type="gseg_avg", verbose=True, save=False):
     if verbose:
-        return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, save)
+        return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, rolecpd_type, save)
     else:
         with HiddenPrints():
-            return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, save)
+            return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, rolecpd_type, save)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--formcpd_type')
+    parser.add_argument('--formcpd_type', defaut="gseg_avg")
+    parser.add_argument('--rolecpd_type', default="gseg_avg")
     parser.add_argument('--saveinput', default=False, action="store_true")
     parser.add_argument('--noverbose', default=False, action="store_true")
     args = parser.parse_args()
@@ -117,7 +118,13 @@ if __name__ == '__main__':
 
     # Perform SoccerCPD per match using for loop
     for i in activity_records.index:
-        analyze_activity(i, outliers, apply_cpd=True, formcpd_type=args.formcpd_type, verbose=verbose, save=args.saveinput) 
+        analyze_activity(i,
+                         outliers,
+                         apply_cpd=True, 
+                         formcpd_type=args.formcpd_type,
+                         rolecpd_type=args.rolecpd_type,
+                         verbose=verbose,
+                         save=args.saveinput) 
 
         # Set 'stats_saved' value for the match to 1 to avoid redundant executions
         rm.activity_records.at[i, LABEL_STATS_SAVED] = 1
