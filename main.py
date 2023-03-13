@@ -81,7 +81,7 @@ def analyze_activity(i, outliers, apply_cpd=True, formcpd_type='gseg_avg', rolec
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--formcpd_type', defaut="gseg_avg")
+    parser.add_argument('--formcpd_type', default="gseg_avg")
     parser.add_argument('--rolecpd_type', default="gseg_avg")
     parser.add_argument('--saveinput', default=False, action="store_true")
     parser.add_argument('--noverbose', default=False, action="store_true")
