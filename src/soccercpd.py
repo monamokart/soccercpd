@@ -87,7 +87,11 @@ class SoccerCPD:
     
     @staticmethod
     def l2(mat1, mat2):
-        return ((mat1 - mat2)**2).sum()
+        return np.sqrt(((mat1 - mat2)**2).sum())
+    
+    @staticmethod
+    def tchebychev(mat1, mat2):
+        return np.max(np.abs(mat1 - mat2))
 
     # Recursive change-point detection for the input sequence
     def detect_change_times(self, input_seq, sub_dts, mode='form'):
@@ -103,6 +107,8 @@ class SoccerCPD:
                     metric = SoccerCPD.manhattan
                 elif self.distance == "l2":
                     metric = SoccerCPD.l2
+                elif self.distance == "tchebychev":
+                    metric = SoccerCPD.tchebychev
             else:
                 metric = SoccerCPD.hamming
             dists = pd.DataFrame(pairwise_distances(input_seq.drop_duplicates(), metric=metric))
