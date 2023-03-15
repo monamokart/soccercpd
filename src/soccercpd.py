@@ -652,9 +652,9 @@ class SoccerCPD:
             if not os.path.exists(form_dir):
                 os.mkdir(form_dir)
 
-            file_end = "" if self.distance=="manhattan" else self.distance
+            file_end = "" if self.distance=="manhattan" else "_" + self.distance
 
-            form_path = f'{form_dir}/{self.activity_id}_{file_end}.pkl'
+            form_path = f'{form_dir}/{self.activity_id}{file_end}.pkl'
             self.form_periods.to_pickle(form_path)
             print(f"'{form_path}' saving done.")
 
