@@ -1,8 +1,12 @@
 <div align="center">
 	<h1>
-		SoccerCPD
+		SoccerCPD - COPY
 	</h1>
 </div>
+
+## SoccerCPD copy
+This is a copy (with modifications) of the original repo : https://github.com/pientist/soccercpd
+What is written in the README below has been written by the authors:
 
 ## Original Paper
 This repository includes the source code for the following paper and tracking data from a sample match (`17985.ugp`). Please cite when using our code or the sample match data.

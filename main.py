@@ -30,7 +30,7 @@ class HiddenPrints:
         sys.stdout = self._original_stdout
 
 
-def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, rolecpd_type, save):
+def analyze_activity_inner(i, outliers, apply_cpd, args):
     tic = datetime.now()
     activity_id = activity_records.at[i, LABEL_ACTIVITY_ID]
     date = activity_records.at[i, LABEL_DATE]
@@ -53,7 +53,14 @@ def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, rolecpd_type, s
         match.rotate_pitch()
 
         # Apply SoccerCPD on the preprocessed match data
-        cpd = SoccerCPD(match, apply_cpd=apply_cpd, formcpd_type=formcpd_type, rolecpd_type=rolecpd_type, save=save)
+        cpd = SoccerCPD(
+            match,
+            apply_cpd=apply_cpd,
+            formcpd_type=args.formcpd_type,
+            rolecpd_type=args.rolecpd_type,
+            save=args.saveinput,
+            distance=args.distance
+            )
         cpd.run()
         if not cpd.fgp_df.empty:
             cpd.visualize()
@@ -71,12 +78,13 @@ def analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, rolecpd_type, s
         return i, 0
 
 
-def analyze_activity(i, outliers, apply_cpd=True, formcpd_type='gseg_avg', rolecpd_type="gseg_avg", verbose=True, save=False):
+def analyze_activity(i, outliers, args, apply_cpd=True):
+    verbose = not args.noverbose
     if verbose:
-        return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, rolecpd_type, save)
+        return analyze_activity_inner(i, outliers, apply_cpd, args)
     else:
         with HiddenPrints():
-            return analyze_activity_inner(i, outliers, apply_cpd, formcpd_type, rolecpd_type, save)
+            return analyze_activity_inner(i, outliers, apply_cpd, args)
 
 
 if __name__ == '__main__':
@@ -85,6 +93,7 @@ if __name__ == '__main__':
     parser.add_argument('--rolecpd_type', default="gseg_avg")
     parser.add_argument('--saveinput', default=False, action="store_true")
     parser.add_argument('--noverbose', default=False, action="store_true")
+    parser.add_argument('--distance', default="manhattan")
     args = parser.parse_args()
 
     # Install and import the R package 'gSeg' to be used in SoccerCPD
@@ -104,7 +113,6 @@ if __name__ == '__main__':
     print(activity_records)
 
     outliers = pd.read_csv('data/outliers.csv', header=0) if os.path.exists('data/outliers.csv') else None
-    verbose = not args.noverbose
 
     # Perform SoccerCPD per match using parallel processing
     # results = Parallel(n_jobs=50)(
@@ -120,11 +128,8 @@ if __name__ == '__main__':
     for i in activity_records.index:
         analyze_activity(i,
                          outliers,
-                         apply_cpd=True, 
-                         formcpd_type=args.formcpd_type,
-                         rolecpd_type=args.rolecpd_type,
-                         verbose=verbose,
-                         save=args.saveinput) 
+                         args,
+                         apply_cpd=True) 
 
         # Set 'stats_saved' value for the match to 1 to avoid redundant executions
         rm.activity_records.at[i, LABEL_STATS_SAVED] = 1

@@ -24,13 +24,22 @@ pd.set_option('display.max_columns', 20)
 # Formation and role change-point detection (main algorithm)
 class SoccerCPD:
     def __init__(
-        self, match, apply_cpd=True, formcpd_type='gseg_avg', rolecpd_type='gseg_avg',
-        max_sr=MAX_SWITCH_RATE, max_pval=MAX_PVAL, min_pdur=MIN_PERIOD_DUR, min_fdist=MIN_FORM_DIST,
-        save=False):
+        self,
+        match,
+        apply_cpd=True,
+        formcpd_type='gseg_avg',
+        rolecpd_type='gseg_avg',
+        max_sr=MAX_SWITCH_RATE,
+        max_pval=MAX_PVAL,
+        min_pdur=MIN_PERIOD_DUR,
+        min_fdist=MIN_FORM_DIST,
+        save=False,
+        distance="manhattan"):
         self.apply_cpd = apply_cpd
         self.formcpd_type = formcpd_type
         self.rolecpd_type = rolecpd_type
         self.save = save
+        self.distance = distance
         # Available FormCPD types: 'gseg_avg', 'gseg_union', 'kernel_linear', 'kernel_rbf', 'kernel_cosine', 'rank'
         # Available RoleCPD types: 'gseg_avg', 'gseg_union'
 
@@ -75,6 +84,10 @@ class SoccerCPD:
     @staticmethod
     def manhattan(mat1, mat2):
         return np.abs(mat1 - mat2).sum()
+    
+    @staticmethod
+    def l2(mat1, mat2):
+        return ((mat1 - mat2)**2).sum()
 
     # Recursive change-point detection for the input sequence
     def detect_change_times(self, input_seq, sub_dts, mode='form'):
@@ -85,7 +98,13 @@ class SoccerCPD:
         end_time = input_seq.index[-1].time()
 
         if (mode == 'role') or ('gseg' in self.formcpd_type):
-            metric = SoccerCPD.manhattan if mode == 'form' else SoccerCPD.hamming
+            if mode == "form":
+                if self.distance == "manhattan":
+                    metric = SoccerCPD.manhattan
+                elif self.distance == "l2":
+                    metric = SoccerCPD.l2
+            else:
+                metric = SoccerCPD.hamming
             dists = pd.DataFrame(pairwise_distances(input_seq.drop_duplicates(), metric=metric))
 
             # Save the input sequence and the pairwise distances so that we can use them in the R script below
@@ -626,7 +645,10 @@ class SoccerCPD:
             form_dir = f'{self.target_dir}/form'
             if not os.path.exists(form_dir):
                 os.mkdir(form_dir)
-            form_path = f'{form_dir}/{self.activity_id}.pkl'
+
+            file_end = "" if self.distance=="manhattan" else self.distance
+
+            form_path = f'{form_dir}/{self.activity_id}_{file_end}.pkl'
             self.form_periods.to_pickle(form_path)
             print(f"'{form_path}' saving done.")
 
