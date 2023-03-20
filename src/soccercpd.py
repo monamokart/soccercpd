@@ -101,16 +101,18 @@ class SoccerCPD:
         start_time = input_seq.index[0].time()
         end_time = input_seq.index[-1].time()
 
+        if mode == "form":
+            if self.distance == "manhattan":
+                metric = SoccerCPD.manhattan
+            elif self.distance == "l2":
+                metric = SoccerCPD.l2
+            elif self.distance == "tchebychev":
+                metric = SoccerCPD.tchebychev
+        else:
+            metric = SoccerCPD.hamming
+
         if (mode == 'role') or ('gseg' in self.formcpd_type):
-            if mode == "form":
-                if self.distance == "manhattan":
-                    metric = SoccerCPD.manhattan
-                elif self.distance == "l2":
-                    metric = SoccerCPD.l2
-                elif self.distance == "tchebychev":
-                    metric = SoccerCPD.tchebychev
-            else:
-                metric = SoccerCPD.hamming
+            
             dists = pd.DataFrame(pairwise_distances(input_seq.drop_duplicates(), metric=metric))
 
             # Save the input sequence and the pairwise distances so that we can use them in the R script below
@@ -191,7 +193,7 @@ class SoccerCPD:
             # from the segments before and after chg_dt are far enough from each other
             form1_edge_mat = seq1.mean(axis=0).values
             form2_edge_mat = seq2.mean(axis=0).values
-            if self.manhattan(form1_edge_mat, form2_edge_mat) < self.min_fdist:
+            if metric(form1_edge_mat, form2_edge_mat) < self.min_fdist:
                 print('Change-point insignificant: The formation is not changed.\n')
                 return []
             else:
