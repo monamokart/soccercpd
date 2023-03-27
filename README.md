@@ -5,7 +5,7 @@
 </div>
 
 ## SoccerCPD copy
-This is a copy (with modifications) of the original repo : https://github.com/pientist/soccercpd
+This is a copy (with modifications) of the original repo : https://github.com/pientist/soccercpd. We also added the files `players_MCPD.py` and `form_vs_role.py` which are entirely codded by us.
 What is written in the README below has been written by the authors:
 
 ## Original Paper
